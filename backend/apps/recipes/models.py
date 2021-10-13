@@ -9,7 +9,7 @@ def author_directory_path(instance, filename):
     """Вернуть путь к каталогу с изображениями автора.
 
     файл будет загружен в MEDIA_ROOT/user_<id>/<filename>"""
-    return f'recipe/{instance.author.username}/{filename}'
+    return f'recipe/images/{filename}'
 
 
 class Tag(models.Model):
@@ -19,19 +19,22 @@ class Tag(models.Model):
         db_index=True,
     )
     color = models.CharField(
-        max_length=200,
+        max_length=7,
         verbose_name='Цвет в HEX',
-        blank=True,
     )
     slug = models.SlugField(
         max_length=200,
         unique=True,
-        blank=True,
         verbose_name='Уникальный слаг',
     )
 
     class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
         ordering = ('name',)
+
+    def __str__(self):
+        return self.name
 
 
 class Ingredient(models.Model):
@@ -45,31 +48,21 @@ class Ingredient(models.Model):
         verbose_name='Единица измерения',
     )
 
+    def __str__(self):
+        return f'{self.name}, {self.measurement_unit}'
+
+    class Meta:
+        verbose_name_plural = 'Ингредиенты'
+        verbose_name = 'Ингредиент'
+
 
 class Recipe(models.Model):
-    tags = models.ManyToManyField(
-        Tag,
-        related_name='recipes',
-        verbose_name='Теги',
-    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='recipes',
         verbose_name='Автор рецепта',
         db_index=True,
-    )
-    ingredients = models.ManyToManyField(
-        'Ingredient',
-        through='RecipeIngredient',
-        related_name='recipes',
-        verbose_name='Список ингредиентов',
-    )
-    is_favorited = models.BooleanField(
-        verbose_name='Находится ли в избранном',
-    )
-    is_in_shopping_cart = models.BooleanField(
-        verbose_name='Находится ли в корзине',
     )
     name = models.CharField(
         max_length=200,
@@ -81,24 +74,34 @@ class Recipe(models.Model):
         upload_to=author_directory_path,
         blank=True,
         null=True,
-        help_text='Выберите изображение к сообщению')
-
+        help_text='Выберите изображение к сообщению'
+    )
     text = models.TextField(
         verbose_name='Описание',
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        related_name='recipes',
+        verbose_name='Теги',
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления (в минутах)',
     )
 
     class Meta:
+        verbose_name_plural = 'Рецепты'
+        verbose_name = 'Рецепт'
         ordering = ('name',)
+
+    def __str__(self):
+        return f'{self.name} от {self.author}'
 
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='recipe_ingredients',
+        related_name='ingredients',
         verbose_name='Рецепт',
     )
     ingredient = models.ForeignKey(
@@ -109,6 +112,10 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество в рецепте',)
+
+    class Meta:
+        verbose_name = 'Ингредиент в рецепте'
+        verbose_name_plural = 'Ингредиенты в рецептах'
 
 
 class ShoppingCart(models.Model):
@@ -124,6 +131,10 @@ class ShoppingCart(models.Model):
         related_name='cart_items',
         verbose_name='Список ингредиентов',
     )
+
+    class Meta:
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзины'
 
 
 class Favorite(models.Model):

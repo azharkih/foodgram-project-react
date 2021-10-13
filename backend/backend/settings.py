@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     'djoser',
     'django_filters',
 
-    'apps.main',
+    'apps.recipes',
     'apps.users',
 ]
 
@@ -89,7 +89,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-ru'
 
 TIME_ZONE = 'UTC'
 
@@ -101,12 +101,11 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR.parent, 'static')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_URL = 'backend/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = 'backend/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 
@@ -121,9 +120,6 @@ REST_FRAMEWORK = {
         'user': '10000/day',
         'anon': '1000/day',
     },
-    'DEFAULT_PAGINATION_CLASS':
-        'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 100,
     'DEFAULT_FILTER_BECKENDS': (
         'from django_filters.rest_framework.DjangoFilterBackend',
     ),
@@ -138,6 +134,7 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'users.User'
 
 DJOSER = {
+    'LOGIN_FIELD': 'email',
     'SERIALIZERS': {
         'user': 'apps.users.serializers.CustomUserSerializer',
         'current_user': 'apps.users.serializers.CustomUserSerializer',
