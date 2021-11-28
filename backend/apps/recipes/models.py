@@ -9,7 +9,7 @@ def author_directory_path(instance, filename):
     """Вернуть путь к каталогу с изображениями автора.
 
     файл будет загружен в MEDIA_ROOT/user_<id>/<filename>"""
-    return f'recipe/images/{filename}'
+    return f'frecipe/images/{filename}'
 
 
 class Tag(models.Model):
@@ -111,7 +111,7 @@ class RecipeIngredient(models.Model):
         verbose_name='Ингредиент',
     )
     amount = models.PositiveIntegerField(
-        verbose_name='Количество в рецепте',)
+        verbose_name='Количество в рецепте', )
 
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
@@ -126,10 +126,11 @@ class ShoppingCart(models.Model):
         verbose_name='Пользователь',
         db_index=True,
     )
-    ingredients = models.ManyToManyField(
-        Ingredient,
+    recipe = models.ForeignKey(
+        Recipe,
+        verbose_name='Рецепт',
+        on_delete=models.CASCADE,
         related_name='cart_items',
-        verbose_name='Список ингредиентов',
     )
 
     class Meta:
@@ -169,47 +170,3 @@ class Favorite(models.Model):
         verbose_name = 'Избранное'
         constraints = [UniqueConstraint(fields=['user', 'recipe'],
                                         name='unique_favorite')]
-
-
-class Follow(models.Model):
-    """ Класс Follow используется для описания модели подписок.
-
-    Родительский класс -- models.Model.
-
-    Атрибуты класса
-    --------
-                                            PK <--
-    user : models.ForeignKey()              FK --> User
-        Подписчик
-    author : models.ForeignKey()            FK --> User
-        Автор
-
-    Методы класса
-    --------
-    __str__() -- строковое представление модели.
-    """
-
-    user = models.ForeignKey(
-        User,
-        verbose_name='Подписчик',
-        on_delete=models.CASCADE,
-        related_name='follower',
-        help_text='Укажите подписчика'
-    )
-    author = models.ForeignKey(
-        User,
-        verbose_name='Автор',
-        on_delete=models.CASCADE,
-        related_name='following',
-        help_text='Укажите на какого автора подписываемся'
-    )
-
-    class Meta:
-        verbose_name_plural = 'Подписки'
-        verbose_name = 'Подписка'
-        constraints = [UniqueConstraint(fields=['user', 'author'],
-                                        name='unique_following')]
-
-    def __str__(self):
-        """ Вернуть строковое представление."""
-        return f'{self.user} подписан на {self.author}'

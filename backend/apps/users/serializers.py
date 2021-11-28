@@ -1,9 +1,9 @@
 from django.contrib.auth.hashers import make_password
+from djoser.serializers import UserSerializer
 from rest_framework import serializers
 
-from .models import User
-
-from djoser.serializers import UserSerializer
+from .models import Follow, User
+from ..recipes.models import Recipe
 
 
 class CustomUserSerializer(UserSerializer):
@@ -13,6 +13,12 @@ class CustomUserSerializer(UserSerializer):
         model = User
         fields = ('id', 'email', 'username', 'first_name', 'last_name',
                   'is_subscribed')
+
+    def get_is_subscribed(self, obj):
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return Follow.objects.filter(user=user, author=obj.id).exists()
 
 
 class RegistrationUserSerializer(serializers.ModelSerializer):
@@ -38,22 +44,35 @@ class RegistrationUserSerializer(serializers.ModelSerializer):
         return make_password(value)
 
 
-# class ChangePasswordSerializer(serializers.ModelSerializer):
-#     new_password = serializers.CharField(write_only=True, required=True)
-#     current_password = serializers.CharField(write_only=True, required=True)
-#
-#     class Meta:
-#         model = User
-#         fields = ('new_password', 'current_password')
-#
-#     def validate_current_password(self, value):
-#         user = self.context['request'].user
-#         if not user.check_password(value):
-#             raise serializers.ValidationError(
-#                 {'current_password': 'Current password is not correct'})
-#         return value
-#
-#     def update(self, instance, validated_data):
-#         instance.set_password(validated_data['password'])
-#         instance.save()
-#         return instance
+class FollowSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='author.id')
+    email = serializers.ReadOnlyField(source='author.email')
+    username = serializers.ReadOnlyField(source='author.username')
+    first_name = serializers.ReadOnlyField(source='author.first_name')
+    last_name = serializers.ReadOnlyField(source='author.last_name')
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Follow
+        fields = ('id', 'email', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count')
+
+    def get_is_subscribed(self, obj):
+        return Follow.objects.filter(
+            user=obj.user, author=obj.author
+        ).exists()
+
+    def get_recipes(self, obj):
+        from ..recipes.serializers import ShortRecipeSerializer
+
+        request = self.context.get('request')
+        limit = request.GET.get('recipes_limit')
+        queryset = Recipe.objects.filter(author=obj.author)
+        if limit:
+            queryset = queryset[:int(limit)]
+        return ShortRecipeSerializer(queryset, many=True).data
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj.author).count()
